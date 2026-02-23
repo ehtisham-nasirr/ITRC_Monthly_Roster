@@ -1,0 +1,5 @@
+{
+  "name": "Engineer Shift Roster",
+  "description": "Real-time shift tracking for engineers with automated roster parsing from images.",
+  "requestFramePermissions": []
+}
