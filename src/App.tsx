@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
-import { 
-  Calendar, 
-  Clock, 
-  User, 
-  Upload, 
-  Settings, 
-  LogOut, 
-  ChevronLeft, 
-  ChevronRight, 
+import {
+  Calendar,
+  Clock,
+  User,
+  Upload,
+  Settings,
+  LogOut,
+  ChevronLeft,
+  ChevronRight,
   AlertCircle,
   CheckCircle2,
   Loader2,
@@ -71,12 +71,28 @@ export default function App() {
         fetch("/api/roster"),
         fetch("/api/settings")
       ]);
+
       const rosterData = await rosterRes.json();
       const settingsData = await settingsRes.json();
-      setRoster(rosterData);
-      setShiftTimes(settingsData);
+
+      // Ensure we have an array for roster and valid object for settings
+      if (Array.isArray(rosterData)) {
+        setRoster(rosterData);
+      } else {
+        console.warn("Roster data is not an array:", rosterData);
+        setRoster([]);
+      }
+
+      if (settingsData && typeof settingsData === 'object' && !settingsData.success === false) {
+        setShiftTimes(settingsData);
+      } else {
+        console.warn("Settings data is invalid:", settingsData);
+        // Keep default empty object or set to a safe fallback if needed
+      }
+
     } catch (error) {
       console.error("Error fetching data:", error);
+      setRoster([]);
     } finally {
       setLoading(false);
     }
@@ -106,8 +122,8 @@ export default function App() {
     <div className="min-h-screen bg-[#020617] text-slate-200 font-sans selection:bg-emerald-500/30">
       <nav className="border-b border-white/5 bg-[#020617]/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div 
-            className="flex items-center gap-3 cursor-pointer group" 
+          <div
+            className="flex items-center gap-3 cursor-pointer group"
             onClick={() => setView("dashboard")}
           >
             <div className="w-9 h-9 bg-emerald-500 rounded-xl flex items-center justify-center text-[#020617] shadow-[0_0_15px_rgba(16,185,129,0.4)] group-hover:scale-105 transition-transform">
@@ -115,17 +131,17 @@ export default function App() {
             </div>
             <h1 className="text-lg font-bold tracking-tight text-white">Daily Shifts</h1>
           </div>
-          
+
           <div className="flex items-center gap-4">
             {view === "dashboard" ? (
-              <button 
+              <button
                 onClick={() => setView(token ? "admin" : "login")}
                 className="px-5 py-1.5 rounded-full border border-white/10 text-sm font-medium text-slate-300 hover:bg-white/5 hover:text-white transition-all"
               >
                 Login
               </button>
             ) : (
-              <button 
+              <button
                 onClick={handleLogout}
                 className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-500/10 text-sm font-medium text-red-400 hover:bg-red-500/20 transition-all"
               >
@@ -140,20 +156,20 @@ export default function App() {
       <main className="max-w-7xl mx-auto px-6 py-12">
         <AnimatePresence mode="wait">
           {view === "dashboard" && (
-            <Dashboard 
-              roster={roster} 
-              shiftTimes={shiftTimes} 
-              currentDate={currentDate} 
-              setCurrentDate={setCurrentDate} 
+            <Dashboard
+              roster={roster}
+              shiftTimes={shiftTimes}
+              currentDate={currentDate}
+              setCurrentDate={setCurrentDate}
             />
           )}
           {view === "login" && (
             <Login onLogin={handleLogin} />
           )}
           {view === "admin" && (
-            <AdminPanel 
-              shiftTimes={shiftTimes} 
-              onUpdate={fetchData} 
+            <AdminPanel
+              shiftTimes={shiftTimes}
+              onUpdate={fetchData}
             />
           )}
         </AnimatePresence>
@@ -162,8 +178,8 @@ export default function App() {
   );
 }
 
-function Dashboard({ roster, shiftTimes, currentDate, setCurrentDate }: { 
-  roster: RosterItem[], 
+function Dashboard({ roster, shiftTimes, currentDate, setCurrentDate }: {
+  roster: RosterItem[],
   shiftTimes: ShiftTimes,
   currentDate: Date,
   setCurrentDate: (d: Date) => void
@@ -177,7 +193,7 @@ function Dashboard({ roster, shiftTimes, currentDate, setCurrentDate }: {
     }, 60000); // Refresh every minute
     return () => clearInterval(interval);
   }, []);
-  
+
   const getCurrentShift = () => {
     const hour = now.getHours();
     const minute = now.getMinutes();
@@ -230,7 +246,7 @@ function Dashboard({ roster, shiftTimes, currentDate, setCurrentDate }: {
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -239,18 +255,18 @@ function Dashboard({ roster, shiftTimes, currentDate, setCurrentDate }: {
       {/* Hero Header with Navigation */}
       <div className="text-center space-y-1 py-6 relative group">
         <div className="flex items-center justify-center gap-8">
-          <button 
+          <button
             onClick={handlePrevMonth}
             className="p-2 rounded-full hover:bg-white/5 text-slate-500 hover:text-white transition-all"
           >
             <ChevronLeft className="w-8 h-8" />
           </button>
-          
+
           <h1 className="text-6xl md:text-7xl font-black tracking-tighter text-white text-display leading-none min-w-[300px]">
             {format(currentDate, "MMMM")}<span className="text-emerald-500">.</span>
           </h1>
 
-          <button 
+          <button
             onClick={handleNextMonth}
             className="p-2 rounded-full hover:bg-white/5 text-slate-500 hover:text-white transition-all"
           >
@@ -276,7 +292,7 @@ function Dashboard({ roster, shiftTimes, currentDate, setCurrentDate }: {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {onDuty.length > 0 ? (
               onDuty.map(engineer => (
-                <EngineerCard 
+                <EngineerCard
                   key={engineer.engineer_name}
                   engineer={engineer}
                   times={shiftTimes[engineer.shift_type]}
@@ -305,11 +321,11 @@ function Dashboard({ roster, shiftTimes, currentDate, setCurrentDate }: {
         <div className="space-y-4">
           {sortedDates.length > 0 ? (
             sortedDates.map(dateStr => (
-              <DaySection 
-                key={dateStr} 
-                dateStr={dateStr} 
-                dayRoster={groupedRoster[dateStr]} 
-                shiftTimes={shiftTimes} 
+              <DaySection
+                key={dateStr}
+                dateStr={dateStr}
+                dayRoster={groupedRoster[dateStr]}
+                shiftTimes={shiftTimes}
                 currentShiftIndex={getShiftIndex(currentShiftName || "")}
                 todayStr={todayStr}
               />
@@ -327,18 +343,18 @@ function Dashboard({ roster, shiftTimes, currentDate, setCurrentDate }: {
   );
 }
 
-function DaySection({ dateStr, dayRoster, shiftTimes, currentShiftIndex, todayStr }: { 
-  dateStr: string, 
-  dayRoster: RosterItem[], 
-  shiftTimes: ShiftTimes, 
+function DaySection({ dateStr, dayRoster, shiftTimes, currentShiftIndex, todayStr }: {
+  dateStr: string,
+  dayRoster: RosterItem[],
+  shiftTimes: ShiftTimes,
   currentShiftIndex: number,
   todayStr: string,
-  key?: string 
+  key?: string
 }) {
   const [isOpen, setIsOpen] = useState(true);
   const date = parseISO(dateStr);
   const isToday = dateStr === todayStr;
-  
+
   const monthDay = format(date, "MM-dd");
   const eventName = PAKISTANI_EVENTS[monthDay];
 
@@ -356,7 +372,7 @@ function DaySection({ dateStr, dayRoster, shiftTimes, currentShiftIndex, todaySt
 
   return (
     <div className="space-y-2">
-      <button 
+      <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           "w-full flex items-baseline justify-between border-b border-white/5 pb-2 hover:bg-white/5 transition-colors group px-2 rounded-t-lg text-left relative",
@@ -369,7 +385,7 @@ function DaySection({ dateStr, dayRoster, shiftTimes, currentShiftIndex, todaySt
             {format(date, "d")} <span className="text-slate-400 font-medium">{format(date, "EEEE")}</span>
           </h3>
           {eventName && (
-            <motion.span 
+            <motion.span
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold uppercase tracking-tighter flex items-center gap-1"
@@ -389,7 +405,7 @@ function DaySection({ dateStr, dayRoster, shiftTimes, currentShiftIndex, todaySt
 
       <AnimatePresence initial={false}>
         {isOpen && (
-          <motion.div 
+          <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -398,7 +414,7 @@ function DaySection({ dateStr, dayRoster, shiftTimes, currentShiftIndex, todaySt
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-4">
               {activeShifts.length > 0 ? (
                 activeShifts.map(engineer => (
-                  <EngineerCard 
+                  <EngineerCard
                     key={`${dateStr}-${engineer.engineer_name}-${engineer.shift_type}`}
                     engineer={engineer}
                     times={shiftTimes[engineer.shift_type]}
@@ -429,7 +445,7 @@ function EngineerCard({ engineer, times, isEventDay }: { engineer: RosterItem, t
   };
 
   return (
-    <motion.div 
+    <motion.div
       whileHover={{ y: -4, scale: 1.02 }}
       animate={isEventDay ? {
         boxShadow: [
@@ -438,15 +454,15 @@ function EngineerCard({ engineer, times, isEventDay }: { engineer: RosterItem, t
           "0 0 20px rgba(16, 185, 129, 0.1)"
         ]
       } : {}}
-      transition={isEventDay ? { 
+      transition={isEventDay ? {
         boxShadow: { duration: 3, repeat: Infinity, ease: "easeInOut" },
-        type: "spring", 
-        stiffness: 400, 
-        damping: 25 
-      } : { 
-        type: "spring", 
-        stiffness: 400, 
-        damping: 25 
+        type: "spring",
+        stiffness: 400,
+        damping: 25
+      } : {
+        type: "spring",
+        stiffness: 400,
+        damping: 25
       }}
       className={cn(
         "p-6 rounded-[2rem] card-gradient backdrop-blur-md border border-white/5 hover:border-emerald-500/30 transition-all group relative overflow-hidden shadow-xl",
@@ -457,7 +473,7 @@ function EngineerCard({ engineer, times, isEventDay }: { engineer: RosterItem, t
         "absolute top-0 right-0 w-32 h-32 blur-[60px] rounded-full -mr-16 -mt-16 transition-colors",
         isEventDay ? "bg-emerald-500/20 group-hover:bg-emerald-500/30" : "bg-emerald-500/10 group-hover:bg-emerald-500/20"
       )} />
-      
+
       <div className="relative space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -518,14 +534,14 @@ function Login({ onLogin }: { onLogin: (token: string) => void }) {
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       className="max-w-md mx-auto mt-20"
     >
       <div className="bg-[#0f172a] p-10 rounded-[2.5rem] shadow-2xl border border-white/5 relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent opacity-50" />
-        
+
         <div className="flex flex-col items-center mb-10">
           <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500 mb-6 border border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.1)]">
             <Lock className="w-7 h-7" />
@@ -537,8 +553,8 @@ function Login({ onLogin }: { onLogin: (token: string) => void }) {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 ml-1">Access Key</label>
-            <input 
-              type="password" 
+            <input
+              type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
               className="w-full px-5 py-4 rounded-2xl bg-white/5 border border-white/10 text-white focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 outline-none transition-all placeholder:text-slate-700"
@@ -546,9 +562,9 @@ function Login({ onLogin }: { onLogin: (token: string) => void }) {
               required
             />
           </div>
-          
+
           {error && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-center gap-3"
@@ -558,7 +574,7 @@ function Login({ onLogin }: { onLogin: (token: string) => void }) {
             </motion.div>
           )}
 
-          <button 
+          <button
             type="submit"
             disabled={loading}
             className="w-full py-4 bg-emerald-500 text-[#020617] rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-emerald-400 transition-all disabled:opacity-50 flex items-center justify-center gap-3 shadow-[0_10px_20px_rgba(16,185,129,0.2)]"
@@ -571,9 +587,9 @@ function Login({ onLogin }: { onLogin: (token: string) => void }) {
   );
 }
 
-function AdminPanel({ shiftTimes, onUpdate }: { 
-  shiftTimes: ShiftTimes, 
-  onUpdate: () => void 
+function AdminPanel({ shiftTimes, onUpdate }: {
+  shiftTimes: ShiftTimes,
+  onUpdate: () => void
 }) {
   const [uploading, setUploading] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -721,7 +737,7 @@ function AdminPanel({ shiftTimes, onUpdate }: {
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="space-y-12"
@@ -742,13 +758,13 @@ function AdminPanel({ shiftTimes, onUpdate }: {
             </div>
             <h3 className="text-xl font-bold text-white">Roster Intelligence</h3>
           </div>
-          
+
           <p className="text-sm text-slate-400 leading-relaxed">
             Upload your roster image or document. Our AI engine will parse the structure and you can verify the entries before publishing.
           </p>
 
           {!previewData ? (
-            <div 
+            <div
               onClick={() => fileInputRef.current?.click()}
               className={cn(
                 "border-2 border-dashed rounded-3xl p-16 flex flex-col items-center justify-center gap-6 cursor-pointer transition-all group",
@@ -771,11 +787,11 @@ function AdminPanel({ shiftTimes, onUpdate }: {
                   </div>
                 </>
               )}
-              <input 
-                type="file" 
+              <input
+                type="file"
                 ref={fileInputRef}
                 onChange={handleFileUpload}
-                className="hidden" 
+                className="hidden"
                 accept="image/*,.xlsx"
               />
             </div>
@@ -794,13 +810,13 @@ function AdminPanel({ shiftTimes, onUpdate }: {
                 ))}
               </div>
               <div className="flex gap-4">
-                <button 
+                <button
                   onClick={() => setPreviewData(null)}
                   className="flex-1 py-4 bg-white/5 text-white border border-white/10 rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-white/10 transition-all"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   onClick={handleConfirm}
                   disabled={confirming}
                   className="flex-[2] py-4 bg-emerald-500 text-[#020617] rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-emerald-400 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
@@ -836,14 +852,14 @@ function AdminPanel({ shiftTimes, onUpdate }: {
           </div>
 
           <div className="space-y-8">
-            {(Object.entries(localShiftTimes) as [string, {start: string, end: string}][]).map(([name, times]) => (
+            {(Object.entries(localShiftTimes) as [string, { start: string, end: string }][]).map(([name, times]) => (
               <div key={name} className="space-y-3">
                 <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 ml-1">{name} Window</label>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <span className="text-[10px] text-slate-600 ml-1 uppercase">Start</span>
-                    <input 
-                      type="time" 
+                    <input
+                      type="time"
                       value={times.start}
                       onChange={e => setLocalShiftTimes({
                         ...localShiftTimes,
@@ -854,8 +870,8 @@ function AdminPanel({ shiftTimes, onUpdate }: {
                   </div>
                   <div className="space-y-1.5">
                     <span className="text-[10px] text-slate-600 ml-1 uppercase">End</span>
-                    <input 
-                      type="time" 
+                    <input
+                      type="time"
                       value={times.end}
                       onChange={e => setLocalShiftTimes({
                         ...localShiftTimes,
@@ -868,7 +884,7 @@ function AdminPanel({ shiftTimes, onUpdate }: {
               </div>
             ))}
 
-            <button 
+            <button
               onClick={handleSaveSettings}
               className="w-full py-4 bg-white/5 text-white border border-white/10 rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-3"
             >
