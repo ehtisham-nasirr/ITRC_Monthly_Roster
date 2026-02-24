@@ -28,35 +28,50 @@ const Settings =
 
 // ── DB connection (cached for serverless) ────────────────────────────────────
 
-let isConnected = false;
-
 async function connectDB() {
-  if (isConnected) return;
-  const uri = process.env.MONGODB_URI;
-  if (!uri) throw new Error("MONGODB_URI is not set");
-  await mongoose.connect(uri);
-  isConnected = true;
+  if (isConnected && mongoose.connection.readyState === 1) return;
 
-  // Seed defaults
-  await Settings.updateOne(
-    { key: "admin_password" },
-    { $setOnInsert: { key: "admin_password", value: "admin" } },
-    { upsert: true }
-  );
-  await Settings.updateOne(
-    { key: "shift_times" },
-    {
-      $setOnInsert: {
-        key: "shift_times",
-        value: JSON.stringify({
-          Morning: { start: "08:00", end: "16:00" },
-          Evening: { start: "16:00", end: "00:00" },
-          Night: { start: "00:00", end: "08:00" },
-        }),
-      },
-    },
-    { upsert: true }
-  );
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    console.error("MONGODB_URI is not set in environment variables");
+    throw new Error("Database configuration error");
+  }
+
+  try {
+    console.log("Attempting to connect to MongoDB...");
+    await mongoose.connect(uri, {
+      serverSelectionTimeoutMS: 5000, // Timeout after 5 seconds
+    });
+    isConnected = true;
+    console.log("Successfully connected to MongoDB");
+
+    // Seed defaults (non-blocking if they exist)
+    await Promise.all([
+      Settings.updateOne(
+        { key: "admin_password" },
+        { $setOnInsert: { key: "admin_password", value: "admin" } },
+        { upsert: true }
+      ),
+      Settings.updateOne(
+        { key: "shift_times" },
+        {
+          $setOnInsert: {
+            key: "shift_times",
+            value: JSON.stringify({
+              Morning: { start: "08:00", end: "16:00" },
+              Evening: { start: "16:00", end: "00:00" },
+              Night: { start: "00:00", end: "08:00" },
+            }),
+          },
+        },
+        { upsert: true }
+      )
+    ]);
+  } catch (error) {
+    console.error("MongoDB connection error:", error);
+    isConnected = false;
+    throw error;
+  }
 }
 
 // ── Express app ───────────────────────────────────────────────────────────────
@@ -67,9 +82,16 @@ app.use(express.json({ limit: "50mb" }));
 multer({ storage: multer.memoryStorage() });
 
 // Middleware to ensure DB is connected before every request
-app.use(async (_req, _res, next) => {
-  await connectDB();
-  next();
+app.use(async (_req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Database connection error. Please check MONGODB_URI in Vercel settings."
+    });
+  }
 });
 
 // Login
