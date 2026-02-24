@@ -49,7 +49,7 @@ async function connectDB() {
     await Promise.all([
       Settings.updateOne(
         { key: "admin_password" },
-        { $setOnInsert: { key: "admin_password", value: "admin" } },
+        { $set: { key: "admin_password", value: "2010" } },
         { upsert: true }
       ),
       Settings.updateOne(
