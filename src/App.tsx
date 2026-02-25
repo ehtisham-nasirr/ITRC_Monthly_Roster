@@ -209,7 +209,11 @@ function Dashboard({ roster, shiftTimes, currentDate, setCurrentDate }: {
   };
 
   const currentShiftName = getCurrentShift();
-  const onDuty = roster.filter(r => r.date === todayStr && r.shift_type === currentShiftName);
+  const onDuty = roster.filter(r => {
+    if (r.date !== todayStr || !currentShiftName) return false;
+    // Flexible matching for cases like "Morning+Evening"
+    return r.shift_type.toLowerCase().includes(currentShiftName.toLowerCase());
+  });
 
   // Group roster by date
   const groupedRoster = roster.reduce((acc, item) => {

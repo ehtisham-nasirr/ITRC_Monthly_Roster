@@ -47,28 +47,27 @@ async function connectDB() {
     isConnected = true;
     console.log("Successfully connected to MongoDB");
 
-    // Seed defaults (non-blocking if they exist)
-    await Promise.all([
-      Settings.updateOne(
-        { key: "admin_password" },
-        { $set: { key: "admin_password", value: "2010" } },
-        { upsert: true }
-      ),
-      Settings.updateOne(
-        { key: "shift_times" },
-        {
-          $setOnInsert: {
-            key: "shift_times",
-            value: JSON.stringify({
-              Morning: { start: "08:00", end: "16:00" },
-              Evening: { start: "16:00", end: "00:00" },
-              Night: { start: "00:00", end: "08:00" },
-            }),
-          },
-        },
-        { upsert: true }
-      )
-    ]);
+    // Seed defaults (force update if empty or missing)
+    const adminPass = await Settings.findOne({ key: "admin_password" });
+    if (!adminPass) {
+      await Settings.create({ key: "admin_password", value: "2010" });
+    } else if (adminPass.value !== "2010") {
+      await Settings.updateOne({ key: "admin_password" }, { value: "2010" });
+    }
+
+    const shiftTimes = await Settings.findOne({ key: "shift_times" });
+    if (!shiftTimes || shiftTimes.value === "{}" || !shiftTimes.value) {
+      const defaultValue = JSON.stringify({
+        Morning: { start: "08:00", end: "16:00" },
+        Evening: { start: "16:00", end: "00:00" },
+        Night: { start: "00:00", end: "08:00" },
+      });
+      if (!shiftTimes) {
+        await Settings.create({ key: "shift_times", value: defaultValue });
+      } else {
+        await Settings.updateOne({ key: "shift_times" }, { value: defaultValue });
+      }
+    }
   } catch (error) {
     console.error("MongoDB connection error:", error);
     isConnected = false;
