@@ -109,11 +109,10 @@ export default function App() {
         setRoster([]);
       }
 
-      if (settingsData && typeof settingsData === 'object' && !settingsData.success === false) {
+      if (settingsData && typeof settingsData === 'object' && settingsData.success !== false) {
         setShiftTimes(settingsData);
       } else {
-        console.warn("Settings data is invalid:", settingsData);
-        // Keep default empty object or set to a safe fallback if needed
+        console.warn("Settings data is invalid or failed:", settingsData);
       }
 
     } catch (error) {
