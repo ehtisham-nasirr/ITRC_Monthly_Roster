@@ -626,7 +626,7 @@ function AdminPanel({ shiftTimes, onUpdate }: {
       }
 
       const ai = new GoogleGenAI({ apiKey });
-      const model = "gemini-1.5-flash-latest";
+      const model = "gemini-2.0-flash";
 
       const prompt = `
         Extract the shift roster from this image. 
