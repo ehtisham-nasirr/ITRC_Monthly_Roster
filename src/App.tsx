@@ -603,6 +603,12 @@ function AdminPanel({ shiftTimes, onUpdate }: {
   const [previewData, setPreviewData] = useState<RosterItem[] | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    if (shiftTimes && Object.keys(shiftTimes).length > 0) {
+      setLocalShiftTimes(shiftTimes);
+    }
+  }, [shiftTimes]);
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -856,37 +862,53 @@ function AdminPanel({ shiftTimes, onUpdate }: {
           </div>
 
           <div className="space-y-8">
-            {(Object.entries(localShiftTimes) as [string, { start: string, end: string }][]).map(([name, times]) => (
-              <div key={name} className="space-y-3">
-                <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 ml-1">{name} Window</label>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <span className="text-[10px] text-slate-600 ml-1 uppercase">Start</span>
-                    <input
-                      type="time"
-                      value={times.start}
-                      onChange={e => setLocalShiftTimes({
-                        ...localShiftTimes,
-                        [name]: { ...times, start: e.target.value }
-                      })}
-                      className="w-full px-5 py-3 rounded-2xl bg-white/5 border border-white/10 text-white focus:ring-2 focus:ring-emerald-500/30 outline-none transition-all"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <span className="text-[10px] text-slate-600 ml-1 uppercase">End</span>
-                    <input
-                      type="time"
-                      value={times.end}
-                      onChange={e => setLocalShiftTimes({
-                        ...localShiftTimes,
-                        [name]: { ...times, end: e.target.value }
-                      })}
-                      className="w-full px-5 py-3 rounded-2xl bg-white/5 border border-white/10 text-white focus:ring-2 focus:ring-emerald-500/30 outline-none transition-all"
-                    />
+            {Object.keys(localShiftTimes).length === 0 ? (
+              <div className="text-center py-6 space-y-4">
+                <p className="text-sm text-slate-500 italic">No shifts configured. Load defaults?</p>
+                <button
+                  onClick={() => setLocalShiftTimes({
+                    Morning: { start: "08:00", end: "16:00" },
+                    Evening: { start: "16:00", end: "00:00" },
+                    Night: { start: "00:00", end: "08:00" },
+                  })}
+                  className="px-6 py-2 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-emerald-500/20 transition-all"
+                >
+                  Load Defaults
+                </button>
+              </div>
+            ) : (
+              (Object.entries(localShiftTimes) as [string, { start: string, end: string }][]).map(([name, times]) => (
+                <div key={name} className="space-y-3">
+                  <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 ml-1">{name} Window</label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] text-slate-600 ml-1 uppercase">Start</span>
+                      <input
+                        type="time"
+                        value={times.start}
+                        onChange={e => setLocalShiftTimes({
+                          ...localShiftTimes,
+                          [name]: { ...times, start: e.target.value }
+                        })}
+                        className="w-full px-5 py-3 rounded-2xl bg-white/5 border border-white/10 text-white focus:ring-2 focus:ring-emerald-500/30 outline-none transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] text-slate-600 ml-1 uppercase">End</span>
+                      <input
+                        type="time"
+                        value={times.end}
+                        onChange={e => setLocalShiftTimes({
+                          ...localShiftTimes,
+                          [name]: { ...times, end: e.target.value }
+                        })}
+                        className="w-full px-5 py-3 rounded-2xl bg-white/5 border border-white/10 text-white focus:ring-2 focus:ring-emerald-500/30 outline-none transition-all"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
 
             <button
               onClick={handleSaveSettings}
