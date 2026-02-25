@@ -21,12 +21,14 @@ const settingsSchema = new mongoose.Schema({
 });
 
 // Prevent model re-compilation in serverless hot-reload
-const Roster =
+const Roster: mongoose.Model<any> =
   mongoose.models["Roster"] || mongoose.model("Roster", rosterSchema);
-const Settings =
+const Settings: mongoose.Model<any> =
   mongoose.models["Settings"] || mongoose.model("Settings", settingsSchema);
 
 // ── DB connection (cached for serverless) ────────────────────────────────────
+
+let isConnected = false;
 
 async function connectDB() {
   if (isConnected && mongoose.connection.readyState === 1) return;
