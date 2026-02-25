@@ -52,6 +52,32 @@ function getShiftIndex(type: string) {
   return found === -1 ? 99 : found;
 }
 
+function getTimesFromConfig(type: string, shiftTimes: ShiftTimes) {
+  if (!type || type.toLowerCase().includes("off")) return null;
+
+  // Check for exact match
+  if (shiftTimes[type]) return shiftTimes[type];
+
+  // Case-insensitive match
+  const lowerType = type.toLowerCase();
+  const match = Object.entries(shiftTimes).find(([key]) => key.toLowerCase() === lowerType);
+  if (match) return match[1];
+
+  // Handle combinations like "Morning+Evening"
+  const parts = SHIFT_SEQUENCE.filter(s => lowerType.includes(s.toLowerCase()));
+  if (parts.length > 0) {
+    const firstMatch = Object.keys(shiftTimes).find(k => k.toLowerCase() === parts[0].toLowerCase());
+    const lastMatch = Object.keys(shiftTimes).find(k => k.toLowerCase() === parts[parts.length - 1].toLowerCase());
+    const first = firstMatch ? shiftTimes[firstMatch] : null;
+    const last = lastMatch ? shiftTimes[lastMatch] : null;
+    if (first && last) {
+      return { start: first.start, end: last.end };
+    }
+  }
+
+  return null;
+}
+
 export default function App() {
   const [view, setView] = useState<"dashboard" | "admin" | "login">("dashboard");
   const [roster, setRoster] = useState<RosterItem[]>([]);
@@ -299,7 +325,7 @@ function Dashboard({ roster, shiftTimes, currentDate, setCurrentDate }: {
                 <EngineerCard
                   key={engineer.engineer_name}
                   engineer={engineer}
-                  times={shiftTimes[engineer.shift_type]}
+                  times={getTimesFromConfig(engineer.shift_type, shiftTimes)}
                   isEventDay={!!PAKISTANI_EVENTS[format(now, "MM-dd")]}
                 />
               ))
@@ -421,7 +447,7 @@ function DaySection({ dateStr, dayRoster, shiftTimes, currentShiftIndex, todaySt
                   <EngineerCard
                     key={`${dateStr}-${engineer.engineer_name}-${engineer.shift_type}`}
                     engineer={engineer}
-                    times={shiftTimes[engineer.shift_type]}
+                    times={getTimesFromConfig(engineer.shift_type, shiftTimes)}
                     isEventDay={!!eventName}
                   />
                 ))
