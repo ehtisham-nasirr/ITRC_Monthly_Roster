@@ -648,7 +648,7 @@ function AdminPanel({ shiftTimes, onUpdate }: {
         Process every date and every engineer shown in the table.
       `;
 
-      const response = await ai.models.generateContent({
+      const result = await ai.models.generateContent({
         model,
         contents: {
           parts: [
@@ -678,7 +678,7 @@ function AdminPanel({ shiftTimes, onUpdate }: {
         },
       });
 
-      const text = response.text;
+      const text = result.text;
       if (!text) {
         throw new Error("Model returned empty response");
       }
